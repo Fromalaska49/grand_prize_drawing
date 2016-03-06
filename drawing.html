@@ -1,0 +1,175 @@
+<html>
+	<head>
+		<title>
+			Grand Prize
+		</title>
+		<style type="text/css">
+			body{
+				font-family:arial;
+				padding:0px;
+				margin:0px;
+				border-style:none;
+			}
+			div{
+				padding:0px;
+				margin:0px;
+				border-style:none;
+			}
+			.name{
+				text-align:center;
+				/*font-size:80px;*/
+			}
+		</style>
+		<script src="jquery-2.1.4.min.js"></script>
+		<script src="jquery.animate-shadow-min.js"></script>
+		<script type="text/javascript">
+			$(document).ready(function(){
+				var index = 0;
+				window.names = new Array();
+				//window.emails = new Array();
+				window.used = new Array();
+				window.usedIndex = new Array();
+				$.ajax({
+					type: "GET",
+					url: "names.xml",
+					dataType: "xml",
+					success: function(xml){
+						$.parseXML(xml).find('person').each(function(){
+							names[index] = $(this).getAttribute('name');
+							//emails[index] = $(this).attr('email');
+							index++;
+						});
+					},
+					error: function(xml) {
+						//alert("An error occurred while processing the XML file.");
+						//alert("error: "+JSON.stringify(xml, null, 2));
+						
+						$.parseXML(xml).find('person').each(function(){
+							names[index] = $(this).getAttribute('name');
+							//emails[index] = $(this).attr('email');
+							index++;
+						});
+					}
+				});
+				var opacity = 1;
+				var welcome_message = window.setInterval(function(){
+					opacity = Math.abs(opacity - 1);
+					if(opacity){
+						$("#welcome_message").fadeTo(1000, 0.5, "swing");
+					}
+					else{
+						$("#welcome_message").fadeTo(1000, 1.0, "swing");
+					}
+				},1000);
+				$("body").on("keypress",function(event){
+					var keyCode = event.keyCode ? event.keyCode : event.which;
+					if(keyCode==13&&!window.active){
+						//enter key pressed
+						//permit execution
+						//reset everything
+						window.active = true;
+						clearInterval(welcome_message);
+						$("#welcome_message").fadeOut(200);
+						$("#name_container").css("box-shadow","0px 0px 0px #000000");
+						$("#old_name").html("");
+						$("#new_name").html("");
+						$("#name_container").css("top","-40px");
+						window.t=50;
+						$("#winner_announcement").hide();
+						$("#sound_effects").get(0).pause();
+						$("#sound_effects").get(0).currentTime = 0;
+						$("#sound_effects").get(0).play();
+						animateResult();
+					}
+					else{
+						//enter key not pressed
+						//halt execution
+						return;
+					}
+				});
+				function animateResult(){
+					window.t+=4+window.t/15;
+					if(window.t>600){
+						//randomly select new winner and mark as used
+						var i = Math.floor(Math.random()*names.length);
+						while(usedIndex(i)){
+							i = Math.floor(Math.random()*names.length);
+						}
+						window.usedIndex.push(i);
+						//alert(usedIndex.length+" names used");
+						console.log(window.usedIndex)
+						
+						//usedIndex[usedIndex.length]=i;
+						//alert(usedIndex.length+" names used");
+						$("#old_name").html($("#new_name").html());
+						$("#new_name").html(window.names[i]);
+						window.setTimeout(function(){
+							$("#name_container").css("top","-140px");
+							$("#winner_announcement").fadeIn();
+							$("#name_container").animate({
+								height: "+=40",
+								fontSize: "+=40",
+								top: "-=20",
+								boxShadow: "0px 2px 40px -12px #000000"
+							}, "linear",function(){
+								$("#name_container").animate({
+									height: "-=40",
+									fontSize: "-=40",
+									top: "+=20",
+									boxShadow: "0px 2px 20px -2px #000000"
+								}, "slow", function(){
+									//done
+									window.active = false;
+								});
+							});
+						}, 600);
+					}
+					else{
+						window.setTimeout(function(){
+							var i = Math.floor(Math.random()*names.length);
+							while(usedIndex(i)){
+								i = Math.floor(Math.random()*names.length);
+							}
+							$("#old_name").html($("#new_name").html());
+							$("#new_name").html(window.names[i]);
+							$("#old_name").slideDown();
+							$("#new_name").slideDown();
+							animateResult();
+						}, window.t);
+					}
+				}
+				function usedIndex(index){
+					//returns whether the index has been used
+					for(i=0;i<window.usedIndex.length;i++){
+						if(window.usedIndex[i]==index){
+							return true;
+						}
+					}
+					return false;
+				}
+			});
+		</script>
+	</head>
+	<body>
+		<!--<div style="position:absolute;top:50%;left:50%;">-->
+			<div style="display:none;">
+				<audio src="sound_effects.mp3" id="sound_effects"></audio>
+			</div>
+			<div style="height:45%;"></div>
+			<center>
+				<div id="welcome_message" style="display:none;position:relative;top:-200px;color:#000000;font-size:100px;padding:0px;margin:0px;">
+					Grand Prize Drawing
+				</div>
+				<div id="winner_announcement" style="display:none;position:relative;top:-200px;color:#000000;font-size:100px;padding:0px;margin:0px;">
+					The winner is:
+				</div>
+				<div id="name_container" style="display:inline-block;position:relative;top:-40px;height:80px;padding:20px;text-align:center;overflow:hidden;font-size:80px;box-shadow:0px 0px 0px #000000">
+					<div id="new_name" class="name">
+					</div>
+					<div id="old_name" class="name">
+					</div>
+				</div>
+			</center>
+		<!--</div>-->
+	</body>
+</html>
